@@ -2,8 +2,11 @@ import mill._
 import mill.scalalib._
 
 import coursier.maven.MavenRepository
+import contrib.docker.DockerModule
+import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 
-object akkak8s extends ScalaModule {
+
+object akkak8s extends ScalaModule with DockerModule {
 
   def scalaVersion = "2.13.13"
   //def scalaVersion = "3.3.3"
@@ -11,6 +14,9 @@ object akkak8s extends ScalaModule {
   def akkaManagementVersion = "1.5.1"
   def akkaVersion = "2.7.0"
   def akkaHttpVersion = "10.4.0"
+
+
+  def mainClass = Some("akka.sample.cluster.kubernetes.DemoApp")
 
   def repositoriesTask = T.task{
     super.repositoriesTask() ++ Seq(MavenRepository("https://repo.akka.io/maven"))
@@ -33,6 +39,16 @@ object akkak8s extends ScalaModule {
     //"com.typesafe.akka::akka-testkit" % akkaVersion % Test,
     //"com.typesafe.akka::akka-stream-testkit" % akkaVersion % Test) 
   )
+
+  object docker extends DockerConfig {
+    def tags = List("ofenbeck/akkak8s:latest")
+
+    def baseImage = "adoptopenjdk:11-jre-hotspot"
+    //def baseImage = "eclipse-temurin:21-jre-alpine"
+    def exposedPorts = Seq(8080,8558,25520)
+
+  }
+
 
   object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = Agg(

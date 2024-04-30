@@ -4,4 +4,5 @@ target
 .out/
 .vscode/
 .metals/
-
+.bloop/
+out/
