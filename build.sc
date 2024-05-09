@@ -8,12 +8,12 @@ import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 
 object akkak8s extends ScalaModule with DockerModule {
 
-  def scalaVersion = "2.13.13"
-  //def scalaVersion = "3.3.3"
+  //def scalaVersion = "2.13.13"
+  def scalaVersion = "3.3.3"
   def ammoniteVersion = "3.0.0-M1"
   def akkaManagementVersion = "1.5.1"
-  def akkaVersion = "2.7.0"
-  def akkaHttpVersion = "10.4.0"
+  def akkaVersion = "2.9.2"
+  def akkaHttpVersion = "10.5.3"
 
 
   def mainClass = Some("akka.sample.cluster.kubernetes.DemoApp")
@@ -41,11 +41,14 @@ object akkak8s extends ScalaModule with DockerModule {
   )
 
   object docker extends DockerConfig {
-    def tags = List("ofenbeck/akkak8s:latest")
+    def tags = List("ofenbeck/akkak8s:demo4")
 
-    def baseImage = "adoptopenjdk:11-jre-hotspot"
-    //def baseImage = "eclipse-temurin:21-jre-alpine"
+    //def baseImage = "adoptopenjdk:11-jre-hotspot"
+    def baseImage = "eclipse-temurin:21-jre-alpine"
     def exposedPorts = Seq(8080,8558,25520)
+    //def executable = "docker buildx --platform linux/arm64"
+    //def executable = "docker"
+    def platform = "linux/arm64"
 
   }
 
