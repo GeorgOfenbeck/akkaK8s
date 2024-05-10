@@ -29,6 +29,7 @@ object akkak8s extends ScalaModule with DockerModule {
     ivy"com.typesafe.akka::akka-cluster-sharding-typed:${akkaVersion}",
     ivy"com.typesafe.akka::akka-stream-typed:${akkaVersion}",
     ivy"com.typesafe.akka::akka-discovery:${akkaVersion}",
+    ivy"com.typesafe.akka::akka-serialization-jackson:${akkaVersion}",
     ivy"ch.qos.logback:logback-classic:1.2.3",
     ivy"com.lightbend.akka.discovery::akka-discovery-kubernetes-api:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-bootstrap:${akkaManagementVersion}",
@@ -41,15 +42,13 @@ object akkak8s extends ScalaModule with DockerModule {
   )
 
   object docker extends DockerConfig {
-    def tags = List("ofenbeck/akkak8s:demo5")
-
+    def tags = List("ofenbeck/akkak8s:serial1")
     //def baseImage = "adoptopenjdk:11-jre-hotspot"
     def baseImage = "eclipse-temurin:21-jre-alpine"
     def exposedPorts = Seq(8080,8558,25520)
     //def executable = "docker buildx --platform linux/arm64"
     //def executable = "docker"
     def platform = "linux/arm64"
-
   }
 
 

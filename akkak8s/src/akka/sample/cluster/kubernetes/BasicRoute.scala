@@ -1,6 +1,5 @@
 package akka.sample.cluster.kubernetes
 
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
@@ -12,27 +11,27 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class BasicRoute(
-    //clusterActor: ActorRef
-     )(implicit ec: ExecutionContext) {
+     clusterActor: ActorRef
+)(implicit ec: ExecutionContext) {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
 
+  private def exceptionHandler: ExceptionHandler = ExceptionHandler {
+    case ex =>
+      complete(
+        HttpResponse(StatusCodes.InternalServerError, entity = ex.getMessage)
+      )
+  }
+
   val route: Route = {
     handleExceptions(exceptionHandler) {
-      path("hello") {
+      pathPrefix("hello") {
         get {
-          //complete((clusterActor ? "hello").mapTo[String])
-          complete("Hello world")
+          complete((clusterActor ? HelloActor.SayHello("world")).mapTo[HelloActor.HelloGreeting].map(_.message))
+         // complete("Hello world")
         }
       }
     }
   }
 
-  private val exceptionHandler = ExceptionHandler {
-    case e: Exception =>
-      extractUri { uri =>
-        println(s"Request to $uri could not be handled normally")
-        complete(HttpResponse(StatusCodes.InternalServerError, entity = e.getMessage))
-      }
-  }
 }
