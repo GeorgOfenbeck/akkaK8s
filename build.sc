@@ -41,7 +41,7 @@ object akkak8s extends ScalaModule with DockerModule {
   )
 
   object docker extends DockerConfig {
-    def tags = List("ofenbeck/akkak8s:demo4")
+    def tags = List("ofenbeck/akkak8s:demo5")
 
     //def baseImage = "adoptopenjdk:11-jre-hotspot"
     def baseImage = "eclipse-temurin:21-jre-alpine"
