@@ -1,40 +1,28 @@
 package akka.sample.cluster.kubernetes
 
-
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
+import akka.management.scaladsl.AkkaManagement
+import akka.management.cluster.bootstrap.ClusterBootstrap
 
-/**
- * Root actor bootstrapping the application
- */
+/** Root actor bootstrapping the application
+  */
 object Guardian {
 
-  def apply(): Behavior[Nothing] = Behaviors.setup[Nothing] { context =>
-    
-    
-    
-      import akka.actor.typed.scaladsl.adapter._
+  def apply(httpPort: Int): Behavior[Nothing] = Behaviors.setup[Nothing] {
+    context =>
 
-      implicit val system: ActorSystem[Nothing] = context.system
-      implicit val ec = context.system.executionContext
+      HelloActor.initSharding(context.system)
 
-      val cluster = Cluster(context.system)
-      context.log.info(
+      /*     context.log.info(
         "Started [" + context.system + "], cluster.selfAddress = " + cluster.selfMember.address + ")"
       )
-
-      val hallos = ClusterSharding(system).start(
-        typeName = "HelloActor",
-        entityProps = HelloActor.props,
-        settings = ClusterShardingSettings(system.toClassic),
-        extractEntityId = HelloActor.extractEntityId,
-        extractShardId = HelloActor.shardIdDxtractor
-      )
-
-      val helloRoute = new BasicRoute(hallos)
-      Http().newServerAt("0.0.0.0", 8080).bind(helloRoute.route)
-
-/*
+       */
+      val helloRoute = new BasicRoute(context.system)
+      HelloHttpServer.start(helloRoute.route, httpPort, context.system)
+      /*
         //Debugging cluster events
       // Create an actor that handles cluster domain events
       val listener = context.spawn(
@@ -49,17 +37,17 @@ object Guardian {
         listener,
         classOf[ClusterEvent.MemberEvent]
       )
-*/
-
-
-      AkkaManagement.get(system).start()
-      ClusterBootstrap.get(system).start()
+       */
+      if (httpPort == 8080) {
+        AkkaManagement.get(context.system).start()
+        ClusterBootstrap.get(context.system).start()
+      }
       Behaviors.empty
-    
-   // WeatherStation.initSharding(context.system)
+
+    // WeatherStation.initSharding(context.system)
 
 ///    val routes = new WeatherRoutes(context.system)
- //   WeatherHttpServer.start(routes.weather, httpPort, context.system)
+    //   WeatherHttpServer.start(routes.weather, httpPort, context.system)
 
 //    Behaviors.empty
   }
