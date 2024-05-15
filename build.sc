@@ -4,6 +4,7 @@ import mill.scalalib._
 import coursier.maven.MavenRepository
 import contrib.docker.DockerModule
 import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
+import scala.io.Source
 
 object akkak8s extends ScalaModule {
 
@@ -16,9 +17,19 @@ object akkak8s extends ScalaModule {
 
   def mainClass = Some("akka.sample.cluster.kubernetes.DemoApp")
 
+  def loadToken(): String = {
+    val source = Source.fromFile("token.txt")
+    val token: String =
+      try source.mkString
+      finally source.close()
+
+    s"https://repo.lightbend.com/pass/${token}/commercial-releases"
+  }
+
   def repositoriesTask = T.task {
     super.repositoriesTask() ++ Seq(
-      MavenRepository("https://repo.akka.io/maven")
+      MavenRepository("https://repo.akka.io/maven"),
+      MavenRepository(loadToken())
     )
   }
 
