@@ -8,7 +8,7 @@ import scala.io.Source
 
 object akkak8s extends ScalaModule {
 
-  // def scalaVersion = "2.13.13"
+  //def scalaVersion = "2.13.13"
   def scalaVersion = "3.3.3"
   def ammoniteVersion = "3.0.0-M1"
   def akkaManagementVersion = "1.5.1"
@@ -17,7 +17,7 @@ object akkak8s extends ScalaModule {
 
   def mainClass = Some("akka.sample.cluster.kubernetes.DemoApp")
 
-  def loadToken(): String = {
+  def loadToken: T[String] = T {
     val source = Source.fromFile("token.txt")
     val token: String =
       try source.mkString
@@ -34,7 +34,23 @@ object akkak8s extends ScalaModule {
   }
 
   def downloadCinnamonAgent = T {
-    os.proc("curl", "-L", "-o", T.dest / "cinnamon-agent.jar", "https://repo.lightbend.com/commercial-releases/com/lightbend/cinnamon/cinnamon-agent/2.19.4/cinnamon-agent-2.19.4.jar").call()
+    import coursier._
+    // val fetch: Seq[java.io.File] = coursier.Fetch()
+    //  .addDependencies(dep"com.lightbend.cinnamon:sbt-cinnamon-agent_1.0:2.20.0")
+    //  .run()
+
+    // val result = fetch.runResult()
+    // result.getFiles().toArray
+    // T.dest / "cinnamon-agent.jar"
+    // fetch.head.getAbsolutePath
+    // https://repo1.maven.org/maven2/com/lightbend/cinnamon/sbt-cinnamon_2.12_1.0/2.20.0/sbt-cinnamon-2.20.0.jar
+    os.proc(
+      "curl",
+      "-L",
+      "-o",
+      T.dest / "cinnamon-agent.jar",
+      "https://repo1.maven.org/maven2/com/lightbend/cinnamon/sbt-cinnamon_2.12_1.0/2.20.0/sbt-cinnamon-2.20.0.jar"
+    ).call()
     T.dest / "cinnamon-agent.jar"
   }
 
@@ -49,18 +65,22 @@ object akkak8s extends ScalaModule {
     ivy"ch.qos.logback:logback-classic:1.2.3",
     ivy"com.lightbend.akka.discovery::akka-discovery-kubernetes-api:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-bootstrap:${akkaManagementVersion}",
-    ivy"com.lightbend.akka.management::akka-management-cluster-http:${akkaManagementVersion}"
+    ivy"com.lightbend.akka.management::akka-management-cluster-http:${akkaManagementVersion}",
+    ivy"com.lightbend.cinnamon:cinnamon-agent:2.20.0",
 
     // "com.typesafe.akka::akka-testkit" % akkaVersion % "test",
     // "com.typesafe.akka::akka-actor-testkit-typed" % akkaVersion % Test,
     // "com.typesafe.akka::akka-http-testkit" % akkaHttpVersion % Test,
     // "com.typesafe.akka::akka-testkit" % akkaVersion % Test,
     // "com.typesafe.akka::akka-stream-testkit" % akkaVersion % Test)
-
+    ivy"com.lightbend.cinnamon::cinnamon-akka:2.20.0",
+    ivy"com.lightbend.cinnamon::cinnamon-akka-http:2.20.0",
+    ivy"com.lightbend.cinnamon:cinnamon-jvm-metrics-producer:2.20.0",
+    ivy"com.lightbend.cinnamon:cinnamon-opentelemetry:2.20.0",
   )
 
   def runIvyDeps = Agg(
-    ivy"com.lightbend.cinnamon::cinnamon-agent:2.19.4"
+    ivy"com.lightbend.cinnamon::cinnamon-agent:2.20.0"
   )
 
   // Define the first target with its own resources folder
@@ -73,7 +93,7 @@ object akkak8s extends ScalaModule {
     object docker extends DockerConfig {
       def tags = List("ofenbeck/akkak8s:serial3")
       // def baseImage = "adoptopenjdk:11-jre-hotspot"
-      def baseImage = "eclipse-temurin:17-jre-alpine"
+      def baseImage = "eclipse-temurin:21-jre-alpine"
       def exposedPorts = Seq(8080, 8558, 25520)
       // def executable = "docker buildx --platform linux/arm64"
       // def executable = "docker"
@@ -87,7 +107,8 @@ object akkak8s extends ScalaModule {
     def sources = akkak8s.sources
     def ivyDeps = akkak8s.ivyDeps
     def repositoriesTask = akkak8s.repositoriesTask
-    def forkArgs = Seq(s"-javaagent:=
+    // def forkArgs = Seq(s"-javaagent:${akkak8s.downloadCinnamonAgent()}")
+    def forkArgs = Seq(s"-javaagent:/home/rayd/cinnamon-agent-2.20.0.jar")
   }
 
   object test extends ScalaTests with TestModule.Munit {
