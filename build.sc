@@ -33,6 +33,11 @@ object akkak8s extends ScalaModule {
     )
   }
 
+  def downloadCinnamonAgent = T {
+    os.proc("curl", "-L", "-o", T.dest / "cinnamon-agent.jar", "https://repo.lightbend.com/commercial-releases/com/lightbend/cinnamon/cinnamon-agent/2.19.4/cinnamon-agent-2.19.4.jar").call()
+    T.dest / "cinnamon-agent.jar"
+  }
+
   def ivyDeps = Agg(
     ivy"com.typesafe.akka::akka-http:${akkaHttpVersion}",
     ivy"com.typesafe.akka::akka-http-spray-json:${akkaHttpVersion}",
@@ -45,11 +50,17 @@ object akkak8s extends ScalaModule {
     ivy"com.lightbend.akka.discovery::akka-discovery-kubernetes-api:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-bootstrap:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-http:${akkaManagementVersion}"
+
     // "com.typesafe.akka::akka-testkit" % akkaVersion % "test",
     // "com.typesafe.akka::akka-actor-testkit-typed" % akkaVersion % Test,
     // "com.typesafe.akka::akka-http-testkit" % akkaHttpVersion % Test,
     // "com.typesafe.akka::akka-testkit" % akkaVersion % Test,
     // "com.typesafe.akka::akka-stream-testkit" % akkaVersion % Test)
+
+  )
+
+  def runIvyDeps = Agg(
+    ivy"com.lightbend.cinnamon::cinnamon-agent:2.19.4"
   )
 
   // Define the first target with its own resources folder
@@ -62,7 +73,7 @@ object akkak8s extends ScalaModule {
     object docker extends DockerConfig {
       def tags = List("ofenbeck/akkak8s:serial3")
       // def baseImage = "adoptopenjdk:11-jre-hotspot"
-      def baseImage = "eclipse-temurin:21-jre-alpine"
+      def baseImage = "eclipse-temurin:17-jre-alpine"
       def exposedPorts = Seq(8080, 8558, 25520)
       // def executable = "docker buildx --platform linux/arm64"
       // def executable = "docker"
@@ -76,6 +87,7 @@ object akkak8s extends ScalaModule {
     def sources = akkak8s.sources
     def ivyDeps = akkak8s.ivyDeps
     def repositoriesTask = akkak8s.repositoriesTask
+    def forkArgs = Seq(s"-javaagent:=
   }
 
   object test extends ScalaTests with TestModule.Munit {
