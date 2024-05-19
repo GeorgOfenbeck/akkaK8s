@@ -8,8 +8,8 @@ import scala.io.Source
 
 object akkak8s extends ScalaModule {
 
-  // def scalaVersion = "2.13.13"
-  def scalaVersion = "3.3.3"
+  def scalaVersion = "2.13.13"
+  //def scalaVersion = "3.3.3"
   def ammoniteVersion = "3.0.0-M1"
   def akkaManagementVersion = "1.5.1"
   def akkaVersion = "2.9.3"
@@ -76,7 +76,7 @@ object akkak8s extends ScalaModule {
 
     object docker extends DockerConfig {
       import os.Shellable.IterableShellable
-      def tags = List("ofenbeck/akkak8s:serial5")
+      def tags = List("ofenbeck/akkak8s:serial7")
       // def baseImage = "adoptopenjdk:11-jre-hotspot"
       def baseImage = "eclipse-temurin:21-jre-alpine"
       def exposedPorts = Seq(8080, 8558, 25520)

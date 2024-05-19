@@ -29,6 +29,7 @@ object DemoApp {
       .getOrElse(Seq.empty[Int])
 
     if (seedNodePorts.isEmpty) {
+      // if no seed nodes are defined, we are in the kubernetes environment
       val actorSystem = ActorSystem[Nothing](Guardian(8080), "appka")
     } else {
 

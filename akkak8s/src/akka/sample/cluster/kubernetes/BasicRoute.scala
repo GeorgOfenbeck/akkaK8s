@@ -10,9 +10,12 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.model.HttpResponse
+import akka.actor.typed.ActorRef
+import akka.cluster.sharding.typed.ShardingEnvelope
 
 class BasicRoute(
-    system: ActorSystem[_]
+    system: ActorSystem[_],
+    shardingRegion: ActorRef[ShardingEnvelope[HelloActor.Command]]
 ) {
   private val sharding = ClusterSharding(system)
   implicit val timeout: Timeout = Timeout(5.seconds)
@@ -27,13 +30,20 @@ class BasicRoute(
     )
   }
 
+  private def helloInteraction(wsid: Long): Future[HelloActor.HelloGreeting] = {
+    val ref = sharding.entityRefFor(HelloActor.TypeKey, wsid.toString() )
+    ref.ask(HelloActor.SayHello("hello", wsid, _))
+  }
+
+
   val route: Route = {
     handleExceptions(exceptionHandler) {
       path("hello" / LongNumber) { wsid =>
           get {
-            val ref = sharding.entityRefFor(HelloActor.TypeKey, wsid.toString() )
-            ref ! HelloActor.SayHello(s"hello ${wsid}")
-            complete(s"Hello ${wsid}")
+            //ref ! HelloActor.SayHello(s"hello", wsid)
+            onSuccess(helloInteraction(wsid)) { response =>
+              complete(response.message)
+            }
             // complete("Hello world")
         }
       }

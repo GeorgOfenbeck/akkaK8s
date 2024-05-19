@@ -26,7 +26,7 @@ object HelloHttpServer {
       case Success(binding) =>
         val address = binding.localAddress
         system.log.info(
-          "WeatherServer online at http://{}:{}/",
+          "Webserver listening on http://{}:{}/",
           address.getHostString,
           address.getPort
         )
@@ -37,7 +37,7 @@ object HelloHttpServer {
         ) { () =>
           binding.terminate(10.seconds).map { _ =>
             system.log.info(
-              "WeatherServer http://{}:{}/ graceful shutdown completed",
+              "Webserver http://{}:{}/ graceful shutdown completed",
               address.getHostString,
               address.getPort
             )
