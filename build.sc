@@ -8,8 +8,8 @@ import scala.io.Source
 
 object akkak8s extends ScalaModule {
 
-  def scalaVersion = "2.13.13"
-  //def scalaVersion = "3.3.3"
+  //def scalaVersion = "2.13.13"
+  def scalaVersion = "3.3.3"
   def ammoniteVersion = "3.0.0-M1"
   def akkaManagementVersion = "1.5.1"
   def akkaVersion = "2.9.3"
@@ -20,7 +20,7 @@ object akkak8s extends ScalaModule {
   def loadToken: T[String] = T {
     val source = Source.fromFile("token.txt")
     val token: String =
-      try source.mkString
+      try source.mkString.trim
       finally source.close()
 
     s"https://repo.lightbend.com/pass/${token}/commercial-releases"
@@ -82,7 +82,7 @@ object akkak8s extends ScalaModule {
       def exposedPorts = Seq(8080, 8558, 25520)
       // def executable = "docker buildx --platform linux/arm64"
       // def executable = "docker"
-      def platform = "linux/arm64"
+      def platform: T[String] = "linux/arm64"
       def run = Seq(
         s"echo 'hello world'\nADD cinnamon-agent.jar /opt/cinnamon-agent.jar\n"
       )
