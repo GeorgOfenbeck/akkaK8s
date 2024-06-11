@@ -14,6 +14,7 @@ object akkak8s extends ScalaModule {
   def akkaManagementVersion = "1.5.1"
   def akkaVersion = "2.9.3"
   def akkaHttpVersion = "10.5.3"
+  def cinnamonVersion = "2.20.1"
 
   def mainClass = Some("akka.sample.cluster.kubernetes.DemoApp")
 
@@ -37,7 +38,7 @@ object akkak8s extends ScalaModule {
     import coursier._
     val fetch: Seq[java.io.File] = coursier
       .Fetch()
-      .addDependencies(dep"com.lightbend.cinnamon:cinnamon-agent:2.20.0")
+      .addDependencies(dep"com.lightbend.cinnamon:cinnamon-agent:2.20.1")
       .addRepositories(
         repositoriesTask(): _*
       )
@@ -57,14 +58,10 @@ object akkak8s extends ScalaModule {
     ivy"com.lightbend.akka.discovery::akka-discovery-kubernetes-api:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-bootstrap:${akkaManagementVersion}",
     ivy"com.lightbend.akka.management::akka-management-cluster-http:${akkaManagementVersion}",
-    ivy"com.lightbend.cinnamon::cinnamon-akka:2.20.0",
-    ivy"com.lightbend.cinnamon::cinnamon-akka-http:2.20.0",
-    ivy"com.lightbend.cinnamon:cinnamon-jvm-metrics-producer:2.20.0",
-    ivy"com.lightbend.cinnamon:cinnamon-opentelemetry:2.20.0"
-  )
-
-  def runIvyDeps = Agg(
-    ivy"com.lightbend.cinnamon::cinnamon-agent:2.20.0"
+    ivy"com.lightbend.cinnamon::cinnamon-akka:${cinnamonVersion}",
+    ivy"com.lightbend.cinnamon::cinnamon-akka-http:${cinnamonVersion}",
+    ivy"com.lightbend.cinnamon:cinnamon-jvm-metrics-producer:${cinnamonVersion}",
+    ivy"com.lightbend.cinnamon:cinnamon-opentelemetry:${cinnamonVersion}"
   )
 
   // Define the first target with its own resources folder
@@ -75,18 +72,27 @@ object akkak8s extends ScalaModule {
     def repositoriesTask = akkak8s.repositoriesTask
 
     object docker extends DockerConfig {
+
       import os.Shellable.IterableShellable
-      def tags = List("ofenbeck/akkak8s:serial7")
+
+      def tags = List("ofenbeck/akkak8s:shard1")
+
       // def baseImage = "adoptopenjdk:11-jre-hotspot"
       def baseImage = "eclipse-temurin:21-jre-alpine"
+
       def exposedPorts = Seq(8080, 8558, 25520)
+
       // def executable = "docker buildx --platform linux/arm64"
       // def executable = "docker"
-      def platform: T[String] = "linux/arm64"
+      def platform: T[String] = "linux/amd64"
+      //def platform: T[String] = "linux/amd64,linux/arm64"
+
       def run = Seq(
         s"echo 'hello world'\nADD cinnamon-agent.jar /opt/cinnamon-agent.jar\n"
       )
+
       def jvmOptions = Seq("-javaagent:/opt/cinnamon-agent.jar")
+
       private def pullAndHash = T.input {
         def imageHash() =
           os.proc(executable(), "images", "--no-trunc", "--quiet", baseImage())
@@ -101,6 +107,7 @@ object akkak8s extends ScalaModule {
 
         (pullBaseImage(), imageHash())
       }
+
       def buildX = T {
         val dest = T.dest
 
@@ -140,10 +147,17 @@ object akkak8s extends ScalaModule {
           ).call(stdout = os.Inherit, stderr = os.Inherit)
         }
         log.info(s"Docker build completed ${
-            if (result.exitCode == 0) "successfully"
-            else "unsuccessfully"
-          } with ${result.exitCode}")
+          if (result.exitCode == 0) "successfully"
+          else "unsuccessfully"
+        } with ${result.exitCode}")
         tags()
+      }
+
+      def pushX() = T.command {
+        val tags = buildX()
+        tags.foreach(t =>
+          os.proc(executable(), "push", t).call(stdout = os.Inherit, stderr = os.Inherit)
+        )
       }
     }
   }
@@ -155,7 +169,7 @@ object akkak8s extends ScalaModule {
     def ivyDeps = akkak8s.ivyDeps
     def repositoriesTask = akkak8s.repositoriesTask
     def forkArgs = Seq(s"-javaagent:${akkak8s.downloadCinnamonAgent()}")
-    // def forkArgs = Seq(s"-javaagent:/home/rayd/cinnamon-agent-2.20.0.jar")
+    // def forkArgs = Seq(s"-javaagent:/home/rayd/cinnamon-agent-${cinnamonVersion}.jar")
   }
 
   object test extends ScalaTests with TestModule.Munit {

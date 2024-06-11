@@ -25,11 +25,25 @@ object HelloActor {
   // oblivious to being used in sharding
   val TypeKey: EntityTypeKey[HelloActor.Command] =
     EntityTypeKey[HelloActor.Command]("HelloActor")
+ 
+  import akka.cluster.sharding.typed._
+
+  final class MyMessageExtractor[M](val numberOfShards: Int) extends ShardingMessageExtractor[ShardingEnvelope[M],M]{
+
+  override def entityId(envelope: ShardingEnvelope[M]): String = envelope.entityId
+  override def shardId(entityId: String): String = "0" //(math.abs(entityId.hashCode) % numberOfShards).toString
+  override def unwrapMessage(envelope: ShardingEnvelope[M]): M = envelope.message
+  } 
+
 
   def initSharding(system: ActorSystem[_])  =
     ClusterSharding(system).init(Entity(TypeKey) { entityContext =>
       HelloActor(entityContext.entityId)
-    })
+    }.withMessageExtractor(new MyMessageExtractor[HelloActor.Command](100))
+
+    )
+    
+
 
   // actor commands and responses
   sealed trait Command extends CborSerializable
@@ -62,6 +76,7 @@ object HelloActor {
       case HelloGreeting(message, fwsid ) => {
         context.log.info(s"HelloActor $wsid received a HelloGreeting message: $message")
         val ref = sharding.entityRefFor(HelloActor.TypeKey, (fwsid-1).toString() )
+        context.log.info(s"${ref.dataCenter} ${ref.entityId}")
         if (fwsid > 1) ref ! HelloGreeting(s"from $wsid", fwsid-1)
         Behaviors.same
       } 
